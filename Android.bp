@@ -12,12 +12,16 @@ rust_library {
         "hbm_defaults",
     ],
     rustlibs: [
-        "libash_rust",
+        "libash_latest_rust",
         "libbitflags",
         "libdrm_rust",
+        "liblibc",
         "liblog_rust",
         "libnix",
         "libthiserror",
+    ],
+    features: [
+        "ash",
     ],
 }
 
@@ -35,6 +39,21 @@ rust_binary {
     relative_install_path: "hw",
     init_rc: ["hbm-gralloc/data/android.hardware.graphics.allocator-service.hbm.rc"],
     vintf_fragments: ["hbm-gralloc/data/android.hardware.graphics.allocator-service.hbm.xml"],
+    enabled: false,
+}
+
+rust_ffi_static {
+    name: "libhbm_minigbm_rust",
+    crate_name: "hbm_minigbm",
+    crate_root: "hbm-minigbm/src/lib.rs",
+    defaults: [
+        "hbm_defaults",
+    ],
+    rustlibs: [
+        "libhbm",
+        "liblibc",
+        "liblog_rust",
+    ],
 }
 
 rust_ffi_static {
@@ -48,6 +67,24 @@ rust_ffi_static {
         "libhbm",
         "libimapper_stablec_bindgen",
     ],
+    enabled: false,
+}
+
+cc_library_shared {
+    name: "libhbm_minigbm",
+    whole_static_libs: ["libhbm_minigbm_rust"],
+    vendor: true,
+    shared_libs: ["liblog"],
+    export_include_dirs: ["hbm-minigbm/include"],
+    enabled: false,
+    arch: {
+        x86: {
+            enabled: true,
+        },
+        x86_64: {
+            enabled: true,
+        },
+    }
 }
 
 cc_library_shared {
@@ -59,4 +96,5 @@ cc_library_shared {
     ldflags: [
         "-Wl,--undefined=AIMapper_loadIMapper",
     ],
+    enabled: false,
 }
