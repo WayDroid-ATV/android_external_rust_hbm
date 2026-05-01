@@ -1533,7 +1533,21 @@ impl Image {
             .drm_format_modifier(layout.modifier.0)
             .plane_layouts(&plane_layouts);
 
-        Self::create_image(dev, tiling, img_info, width, height, mod_info)
+        match Self::create_image(dev, tiling, img_info, width, height, mod_info) {
+            Ok(img) => Ok(img),
+            Err(err) => {
+                // fallback to create_implicit_image if create_image failed with
+                // VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT
+                if let super::types::Error::Code(code) = &err {
+                    if vk::Result::from_raw(*code) == vk::Result::ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT {
+                        let mods = slice::from_ref(&layout.modifier);
+                        return Self::create_implicit_image(dev, tiling, img_info, width, height, mods);
+                    }
+                }
+
+                Err(err)
+            }
+        }
     }
 
     fn create_image<T: vk::ExtendsImageCreateInfo>(
